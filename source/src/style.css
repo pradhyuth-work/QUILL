@@ -368,3 +368,8 @@ h1{font:600 36px/1.04 var(--ui);letter-spacing:-.035em;margin:22px 0 8px}
 .field{display:block;width:100%;box-sizing:border-box;font:400 16px var(--ui);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 8px;min-height:44px}
 .field:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .row2{display:flex;gap:8px}.row2>button{flex:1;margin:0}
+/* Sheets opened by toggling [hidden] only (More, Account, password, OCR) never got the .open class, so they stayed off-screen. */
+#moreSheet:not([hidden]) .scrim,#acctSheet:not([hidden]) .scrim,#pwSheet:not([hidden]) .scrim,#ocrSheet:not([hidden]) .scrim{opacity:1}
+#moreSheet:not([hidden]) .sheet,#acctSheet:not([hidden]) .sheet,#pwSheet:not([hidden]) .sheet,#ocrSheet:not([hidden]) .sheet{transform:none;animation:sheetIn .32s cubic-bezier(.3,.7,.2,1);max-height:92%;overflow-y:auto}
+@keyframes sheetIn{from{transform:translateY(100%)}}
+
