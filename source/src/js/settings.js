@@ -5,6 +5,9 @@ var app=$('#app');
 function applyTheme(){
   var r=document.documentElement;
   if(S.theme==='auto') r.removeAttribute('data-theme'); else r.setAttribute('data-theme',S.theme);
+  var dk=S.theme==='dark'||(S.theme==='auto'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches);
+  document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.remove()});
+  var tc=document.createElement('meta');tc.name='theme-color';tc.content=dk?'#0B0E0F':'#F1F2F0';document.head.appendChild(tc);
   document.querySelectorAll('#themeOpts button').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.t===S.theme))});
 }
 function applyFs(){app.style.setProperty('--fs',S.fs+'px');$('#fsr').value=S.fs;$('#fsv').textContent=S.fs}
@@ -15,6 +18,7 @@ function applyRate(){
 }
 $('#speedOpts').innerHTML=RATES.map(function(r){return '<button type="button" data-r="'+r+'" aria-pressed="false">'+rateLabel(r)+'</button>'}).join('');
 applyTheme();applyFs();applyRate();
+if(window.matchMedia)try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',applyTheme)}catch(e){}
 
 var toastT;
 function toast(msg){
