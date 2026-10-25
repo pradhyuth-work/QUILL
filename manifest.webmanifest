@@ -1,0 +1,34 @@
+{
+ "name": "Quill",
+ "short_name": "Quill",
+ "description": "Read or listen to your own PDFs as swipeable cards.",
+ "start_url": ".",
+ "scope": ".",
+ "display": "standalone",
+ "orientation": "any",
+ "background_color": "#F1F2F0",
+ "theme_color": "#F1F2F0",
+ "categories": [
+  "books",
+  "education",
+  "productivity"
+ ],
+ "icons": [
+  {
+   "src": "icons/icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png"
+  },
+  {
+   "src": "icons/icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png"
+  },
+  {
+   "src": "icons/maskable-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "maskable"
+  }
+ ]
+}

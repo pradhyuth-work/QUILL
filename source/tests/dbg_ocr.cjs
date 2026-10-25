@@ -1,0 +1,10 @@
+const {serve,mkPage,chromium,path}=require('./lib.cjs');const fs=require('fs');
+(async()=>{const {server,base}=await serve();const br=await chromium.launch();
+const pg=await mkPage(br,base);pg.on('console',m=>console.log('console',m.type(),m.text()));await pg.goto(base+'/');await pg.waitForSelector('.book');
+const ocr=JSON.parse(fs.readFileSync(path.join(__dirname,'corpus/scanned_ocr.json'),'utf8'));
+await pg.evaluate(o=>{let n=0;window.Tesseract={createWorker:async(lang)=>({recognize:async()=>({data:{text:o[n++%o.length]}}),terminate:async()=>{}})}},ocr);
+await pg.setInputFiles('.ov',path.join(__dirname,'corpus/scanned.pdf'));
+await pg.waitForSelector('#ocrSheet:not([hidden])');await pg.click('#ocrSheet [data-r=go]');
+await pg.waitForTimeout(6000);
+console.log(await pg.textContent('#toast'),await pg.$eval('#busyMsg',e=>e.textContent),pg.errors);
+await br.close();server.close();})();

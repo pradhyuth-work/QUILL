@@ -1,0 +1,11 @@
+import fs from 'fs';import vm from 'vm';
+const pdfjs=await import('/opt/npm-tools/node_modules/pdfjs-dist/legacy/build/pdf.mjs');
+const src=fs.readFileSync('../src/extract.js','utf8');
+const ctx={console,document:undefined,FOLIO_DEBUG:null};vm.createContext(ctx);vm.runInContext(src+';this.api={folioReadPdf,folioChapters,folioDetectLang};',ctx);
+const f=process.argv[2];
+const data=new Uint8Array(fs.readFileSync(f));
+ctx.FOLIO_DEBUG=process.argv[3]?((p,k,t,y,g,x)=>console.log(p,k,y.toFixed(0),x.toFixed(0),t.slice(0,60))):null;
+const res=await ctx.api.folioReadPdf(pdfjs,data,null,{noFigures:true,docOpts:{cMapUrl:'/opt/npm-tools/node_modules/pdfjs-dist/cmaps/',cMapPacked:true,standardFontDataUrl:'/opt/npm-tools/node_modules/pdfjs-dist/standard_fonts/'}});
+console.log(res.stats,res.blocks.length);
+res.blocks.slice(0,6).forEach(b=>console.log(b.t,JSON.stringify(b.text).slice(0,100)));
+const chs=ctx.api.folioChapters(res.blocks,'x');console.log(chs.length,chs.map(c=>c.title+':'+c.blocks.length));

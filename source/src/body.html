@@ -1,0 +1,190 @@
+<main class="app" id="app">
+
+  <!-- Library -->
+  <section class="view" id="library" aria-label="Library">
+    <div class="lib-top">
+      <div class="brand"><i></i>Quill</div>
+      <div class="topr"><button class="ib" id="moreBtn" aria-label="Backup, storage and help" title="More"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button><button class="chip" id="editBtn" type="button" aria-pressed="false">Edit</button><button class="ib" id="themeBtn" aria-label="Change theme" title="Theme">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>
+      </button></div>
+    </div>
+    <div class="lib-scroll">
+      <h1>Your shelf</h1>
+      <p class="sub" id="libSub">Add a book, then swipe through it or have it read aloud.</p>
+      <div class="chips" id="fchips" hidden></div>
+      <div id="gManage" hidden style="margin:-8px 0 18px"><button class="chip" type="button">Edit this group</button></div>
+      <div id="shelf"></div>
+      <div id="restoreWrap" hidden><button class="chip restore" id="restore" type="button">Restore sample books</button></div>
+      <p class="foot">Books are read on this device and never uploaded. Listening uses the free voice built into your phone or computer.</p>
+    </div>
+  </section>
+
+  <!-- Reader -->
+  <section class="view" id="reader" aria-label="Reader" hidden>
+    <header class="bar">
+      <button class="ib" id="back" aria-label="Back to shelf">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+      </button>
+      <div class="seg" id="seg" data-v="read" role="group" aria-label="Mode">
+        <span class="thumb"></span>
+        <button type="button" id="mRead" aria-pressed="true">Read</button>
+        <button type="button" id="mListen" aria-pressed="false">Listen</button>
+      </div>
+      <button class="ib aa" id="aa" aria-label="Reading settings">Aa</button>
+    </header>
+
+    <div class="stage" id="stage">
+      <div class="scroller" id="scroller" tabindex="0" aria-label="Book text"></div>
+      <div class="card measure" aria-hidden="true"><div class="card-body" id="measureBody"><div class="t" id="measureT"></div></div></div>
+    </div>
+
+    <footer class="dock">
+      <div class="meta"><span id="chLabel"></span><span class="num" id="count"></span></div>
+      <input type="range" id="scrub" min="0" max="1" value="0" aria-label="Position in book">
+      <div class="ctl-wrap"><div class="ctl-in">
+        <div class="ctl">
+          <button class="chip l" id="voiceChip" type="button" aria-label="Choose voice">Voice</button>
+          <div class="mid">
+            <button class="ib" id="prev" aria-label="Previous card">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5v14"/><path d="M19 5l-9 7 9 7z"/></svg>
+            </button>
+            <button class="play" id="play" aria-label="Play"></button>
+            <button class="ib" id="next" aria-label="Next card">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 5v14"/><path d="M5 5l9 7-9 7z"/></svg>
+            </button>
+          </div>
+          <button class="chip r num" id="speed" type="button" aria-label="Playback speed">1×</button>
+        </div>
+      </div></div>
+    </footer>
+  </section>
+
+  <!-- Settings sheet -->
+  <div class="sheet-wrap" id="sheet" hidden>
+    <div class="scrim" id="scrim"></div>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetT">
+      <div class="grab"></div>
+      <h3 id="sheetT">Reading settings</h3>
+      <div class="row"><label for="fsr">Text size</label><span class="num" id="fsv">19</span></div>
+      <input type="range" id="fsr" min="16" max="26" step="1" value="19">
+      <div class="row"><span id="themeL">Theme</span></div>
+      <div class="opts" id="themeOpts" role="group" aria-labelledby="themeL">
+        <button type="button" data-t="auto" aria-pressed="true">Auto</button>
+        <button type="button" data-t="light" aria-pressed="false">Light</button>
+        <button type="button" data-t="dark" aria-pressed="false">Dark</button>
+      </div>
+      <div class="row"><label for="voiceSel">Voice</label></div>
+      <select id="voiceSel"><option value="">Device default</option></select>
+      <div class="row"><span id="speedL">Speed</span></div>
+      <div class="opts" id="speedOpts" role="group" aria-labelledby="speedL"></div>
+      <div class="row"><span id="sleepL">Sleep timer</span></div>
+      <div class="opts" id="sleepOpts" role="group" aria-labelledby="sleepL">
+        <button type="button" data-m="0" aria-pressed="true">Off</button><button type="button" data-m="15" aria-pressed="false">15 min</button><button type="button" data-m="30" aria-pressed="false">30 min</button><button type="button" data-m="60" aria-pressed="false">60 min</button><button type="button" data-m="end" aria-pressed="false">Chapter end</button>
+      </div>
+      <label class="chk"><input type="checkbox" id="bgChk"> <span>Keep listening when the screen is off (experimental)</span></label>
+      <button class="btn-done" id="sheetDone" type="button">Done</button>
+    </div>
+  </div>
+
+  <div class="lb" id="lb" hidden role="dialog" aria-modal="true" aria-label="Image viewer">
+    <div class="lb-bar"><span id="lbCap"></span><button class="lb-hide" id="lbHide" type="button" hidden>Remove from book</button><button class="lb-x" id="lbX" type="button" aria-label="Close image">&times;</button></div>
+    <div class="lb-s" id="lbS"><img id="lbImg" alt=""></div>
+  </div>
+
+  <div class="sheet-wrap" id="rnSheet" hidden>
+    <div class="scrim" id="rnScrim"></div>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="rnT">
+      <div class="grab"></div>
+      <h3 id="rnT">Edit book</h3>
+      <div class="row"><label for="rnIn">Title</label></div>
+      <input class="txt" id="rnIn" type="text" maxlength="80" autocomplete="off">
+      <div class="row"><span id="rnCL">Cover colour</span></div>
+      <div class="swatches" id="rnSw" role="group" aria-labelledby="rnCL"></div>
+      <div id="rnCvRow" hidden>
+        <div class="row"><span id="rnPL">Cover picture</span></div>
+        <div class="opts" id="rnPic" role="group" aria-labelledby="rnPL"><button type="button" data-p="0" aria-pressed="true">Use the book's cover</button><button type="button" data-p="1" aria-pressed="false">Plain cover</button></div>
+      </div>
+      <div class="row"><span id="rnGL">Group</span></div>
+      <div class="opts" id="rnGr" role="group" aria-labelledby="rnGL"></div>
+      <input class="txt" id="rnNew" type="text" maxlength="40" autocomplete="off" placeholder="Or create a new group" aria-label="New group name" style="margin-top:10px">
+      <button class="btn-done" id="rnSave" type="button">Save</button>
+    </div>
+  </div>
+
+  <div class="sheet-wrap" id="gSheet" hidden>
+    <div class="scrim" id="gScrim"></div>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="gT">
+      <div class="grab"></div>
+      <h3 id="gT">New group</h3>
+      <div class="row"><label for="gIn">Name</label></div>
+      <input class="txt" id="gIn" type="text" maxlength="40" autocomplete="off" placeholder="For example, Work or Astrology">
+      <button class="btn-done" id="gSave" type="button">Save</button>
+      <button class="btn-ghost" id="gDel" type="button" hidden>Delete group</button>
+    </div>
+  </div>
+
+  <div class="busy" id="busy" hidden role="status" aria-live="polite">
+    <div class="ring"></div>
+    <div class="bar2"><i id="busyBar"></i></div>
+    <p id="busyMsg">Setting the page</p>
+    <p class="eta num" id="busyEta" hidden></p>
+    <button class="btn-sec" id="busyCancel" type="button">Cancel</button>
+  </div>
+
+  <div class="sheet-wrap" id="pwSheet" hidden>
+    <div class="scrim"></div>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="pwT">
+      <div class="grab"></div>
+      <h3 id="pwT">This PDF is locked</h3>
+      <p class="note" id="pwErr" hidden style="color:var(--danger,#b4443a)">That password did not work. Try again.</p>
+      <div class="row"><label for="pwIn">Password</label></div>
+      <input class="txt" id="pwIn" type="password" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <p class="note">The password is used on this device to open the file and is not stored.</p>
+      <button class="btn-done" data-r="ok" type="button">Unlock</button>
+      <button class="btn-sec" data-r="no" type="button">Cancel</button>
+    </div>
+  </div>
+
+  <div class="sheet-wrap" id="ocrSheet" hidden>
+    <div class="scrim"></div>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="ocrT">
+      <div class="grab"></div>
+      <h3 id="ocrT">This looks like a scanned book</h3>
+      <p class="note">There is no selectable text in this file, only pictures of pages. Quill can try to recognise the text on this device. This is a beta feature: it needs a connection to fetch the recogniser once, is slow (a few seconds per page), and scans of poor quality will have mistakes.</p>
+      <div class="row"><label for="ocrLang">Language of the book</label></div>
+      <select id="ocrLang">
+        <option value="eng">English</option><option value="hin">Hindi</option><option value="spa">Spanish</option><option value="fra">French</option><option value="deu">German</option><option value="por">Portuguese</option><option value="ita">Italian</option><option value="rus">Russian</option><option value="ara">Arabic</option><option value="tam">Tamil</option><option value="tel">Telugu</option><option value="ben">Bengali</option><option value="jpn">Japanese</option><option value="chi_sim">Chinese (Simplified)</option><option value="kor">Korean</option>
+      </select>
+      <button class="btn-done" data-r="go" type="button">Recognise text (beta)</button>
+      <button class="btn-sec" data-r="no" type="button">Not now</button>
+    </div>
+  </div>
+
+  <div class="sheet-wrap" id="moreSheet" hidden>
+    <div class="scrim" id="moreScrim"></div>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="moreT">
+      <div class="grab"></div>
+      <h3 id="moreT">Backup and storage</h3>
+      <p class="note" id="stLine">Checking storage\u2026</p>
+      <p class="note" id="stWarn" hidden></p>
+      <button class="btn-done" id="bkExport" type="button">Export a backup</button>
+      <label class="btn-sec filebtn" for="bkImport" id="bkImportL" role="button" tabindex="0">Restore from a backup</label>
+      <input id="bkImport" type="file" accept=".json,application/json" hidden>
+      <div class="row" style="margin-top:14px"><span>Sync</span></div>
+      <div id="sbBox" hidden>
+        <p class="note" id="sbWho" hidden></p>
+        <div id="sbForm">
+          <input id="sbEmail" class="field" type="email" inputmode="email" autocomplete="username" placeholder="Email" aria-label="Email">
+          <input id="sbPass" class="field" type="password" autocomplete="current-password" placeholder="Password (6+ characters)" aria-label="Password">
+          <div class="row2"><button class="btn-done" id="sbIn" type="button">Sign in</button><button class="btn-sec" id="sbUp" type="button">Create account</button></div>
+        </div>
+        <p class="note" id="sbMsg" role="status"></p>
+        <button class="btn-sec" id="sbOut" type="button" hidden>Sign out</button>
+      </div>
+      <p class="note" id="syncLine">Reading positions and shelf order sync across your devices when you are signed in to Claude. Book text stays on each device.</p>
+      <p class="note">Quill keeps your books in this browser only. Clearing site data removes them, so export a backup now and then.</p>
+      <button class="btn-sec" id="moreDone" type="button">Close</button>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+</main>
