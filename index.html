@@ -392,6 +392,8 @@ h1{font:600 36px/1.04 var(--ui);letter-spacing:-.035em;margin:22px 0 8px}
 .row2{display:flex;gap:8px}.row2>button{flex:1;margin:0}
 /* Sheets opened by toggling [hidden] only (More, Account, password, OCR) never got the .open class, so they stayed off-screen. */
 #moreSheet:not([hidden]) .scrim,#acctSheet:not([hidden]) .scrim,#pwSheet:not([hidden]) .scrim,#ocrSheet:not([hidden]) .scrim{opacity:1}
+/* no account, no app: the shelf and reader stay hidden until someone signs in */
+.needs-acct .view{visibility:hidden}
 #moreSheet:not([hidden]) .sheet,#acctSheet:not([hidden]) .sheet,#pwSheet:not([hidden]) .sheet,#ocrSheet:not([hidden]) .sheet{transform:none;animation:sheetIn .32s cubic-bezier(.3,.7,.2,1);max-height:92%;overflow-y:auto}
 @keyframes sheetIn{from{transform:translateY(100%)}}
 
@@ -1949,6 +1951,8 @@ $('#moreDone').addEventListener('click',closeMore);
 $('#moreScrim').addEventListener('click',closeMore);
 
 var acctSheet=$('#acctSheet');
+/* with accounts configured, nothing opens until someone has signed in: lock from the first moment */
+try{var _lc=window.FOLIO_CONFIG&&window.FOLIO_CONFIG.supabase;if(_lc&&_lc.url&&_lc.anonKey){window.__acctLocked=true;document.documentElement.classList.add('needs-acct')}}catch(e){}
 function openAcct(){acctSheet.hidden=false}
 function closeAcct(){if(window.__acctLocked) return;acctSheet.hidden=true}
 $('#acctBtn').addEventListener('click',openAcct);
@@ -2954,6 +2958,12 @@ document.addEventListener('click',function(e){
       signIn:async function(id,pin){var j=norm(await auth('token?grant_type=password',{email:toEmail(id),password:toPass(pin)}));if(!j) throw new Error('Sign in failed');j.aid=id;save(j);return true},
       signUp:async function(id,pin){var raw=await auth('signup',{email:toEmail(id),password:toPass(pin)});var j=norm(raw);if(!j){return 'confirm'}j.aid=id;save(j);return true},
       signOut:function(){save(null)},
+      /* a stored session only counts if the account still exists on the server */
+      verify:async function(){
+        var t=await token();if(!t) return false;
+        try{var r=await fetch(base+'/auth/v1/user',{headers:hdr(t)});if(r.status===401||r.status===403||r.status===404){save(null);return false}}catch(e){}
+        return true;
+      },
       get:async function(){
         var t=await token();if(!t) throw new Error('signed out');
         var r=await fetch(base+'/rest/v1/folio_state?select=data&user_id=eq.'+encodeURIComponent(sess.uid),{headers:hdr(t)});
@@ -2998,6 +3008,7 @@ document.addEventListener('click',function(e){
       var on=api.signedIn();form.hidden=on;outB.hidden=!on;who.hidden=!on;who.textContent=on?('Signed in'+(api.accountId()?' as '+api.accountId():'')+'.'):'';
       /* no skipping sign-in while this provider is in use: closeAcct() checks this */
       window.__acctLocked=!on;
+      document.documentElement.classList.toggle('needs-acct',!on);
       var btn=$('#acctBtn'),done=$('#acctDone');
       if(done) done.hidden=!on;
       if(btn){
@@ -3024,7 +3035,10 @@ document.addEventListener('click',function(e){
     inB.addEventListener('click',function(){go('in')});upB.addEventListener('click',function(){go('up')});
     outB.addEventListener('click',function(){api.signOut();ref=null;clearTimeout(pushT);paint();switchAccount('');line('Signed out. Your library stays on this device.')});
     paint();
-    if(api.signedIn()){ref=api;line('Syncing…');pull().catch(function(){line('Sync is paused: offline or signed out.')})}
+    if(api.signedIn()){ref=api;line('Syncing…');api.verify().then(function(ok){
+      if(!ok){ref=null;clearTimeout(pushT);paint();switchAccount('');openAcct();line('Please sign in with an account to continue.');return}
+      return pull();
+    }).catch(function(){line('Sync is paused: offline or signed out.')})}
     else line('Sign in to keep your shelf, reading positions and books in step across your devices.');
   }
   if(hasSb&&!hasClaude){ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',setup);else setup(); return }

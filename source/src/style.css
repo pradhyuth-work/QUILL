@@ -370,6 +370,8 @@ h1{font:600 36px/1.04 var(--ui);letter-spacing:-.035em;margin:22px 0 8px}
 .row2{display:flex;gap:8px}.row2>button{flex:1;margin:0}
 /* Sheets opened by toggling [hidden] only (More, Account, password, OCR) never got the .open class, so they stayed off-screen. */
 #moreSheet:not([hidden]) .scrim,#acctSheet:not([hidden]) .scrim,#pwSheet:not([hidden]) .scrim,#ocrSheet:not([hidden]) .scrim{opacity:1}
+/* no account, no app: the shelf and reader stay hidden until someone signs in */
+.needs-acct .view{visibility:hidden}
 #moreSheet:not([hidden]) .sheet,#acctSheet:not([hidden]) .sheet,#pwSheet:not([hidden]) .sheet,#ocrSheet:not([hidden]) .sheet{transform:none;animation:sheetIn .32s cubic-bezier(.3,.7,.2,1);max-height:92%;overflow-y:auto}
 @keyframes sheetIn{from{transform:translateY(100%)}}
 

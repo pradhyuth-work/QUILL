@@ -114,6 +114,12 @@
       signIn:async function(id,pin){var j=norm(await auth('token?grant_type=password',{email:toEmail(id),password:toPass(pin)}));if(!j) throw new Error('Sign in failed');j.aid=id;save(j);return true},
       signUp:async function(id,pin){var raw=await auth('signup',{email:toEmail(id),password:toPass(pin)});var j=norm(raw);if(!j){return 'confirm'}j.aid=id;save(j);return true},
       signOut:function(){save(null)},
+      /* a stored session only counts if the account still exists on the server */
+      verify:async function(){
+        var t=await token();if(!t) return false;
+        try{var r=await fetch(base+'/auth/v1/user',{headers:hdr(t)});if(r.status===401||r.status===403||r.status===404){save(null);return false}}catch(e){}
+        return true;
+      },
       get:async function(){
         var t=await token();if(!t) throw new Error('signed out');
         var r=await fetch(base+'/rest/v1/folio_state?select=data&user_id=eq.'+encodeURIComponent(sess.uid),{headers:hdr(t)});
@@ -158,6 +164,7 @@
       var on=api.signedIn();form.hidden=on;outB.hidden=!on;who.hidden=!on;who.textContent=on?('Signed in'+(api.accountId()?' as '+api.accountId():'')+'.'):'';
       /* no skipping sign-in while this provider is in use: closeAcct() checks this */
       window.__acctLocked=!on;
+      document.documentElement.classList.toggle('needs-acct',!on);
       var btn=$('#acctBtn'),done=$('#acctDone');
       if(done) done.hidden=!on;
       if(btn){
@@ -184,7 +191,10 @@
     inB.addEventListener('click',function(){go('in')});upB.addEventListener('click',function(){go('up')});
     outB.addEventListener('click',function(){api.signOut();ref=null;clearTimeout(pushT);paint();switchAccount('');line('Signed out. Your library stays on this device.')});
     paint();
-    if(api.signedIn()){ref=api;line('Syncing…');pull().catch(function(){line('Sync is paused: offline or signed out.')})}
+    if(api.signedIn()){ref=api;line('Syncing…');api.verify().then(function(ok){
+      if(!ok){ref=null;clearTimeout(pushT);paint();switchAccount('');openAcct();line('Please sign in with an account to continue.');return}
+      return pull();
+    }).catch(function(){line('Sync is paused: offline or signed out.')})}
     else line('Sign in to keep your shelf, reading positions and books in step across your devices.');
   }
   if(hasSb&&!hasClaude){ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',setup);else setup(); return }

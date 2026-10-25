@@ -18,6 +18,8 @@ $('#moreDone').addEventListener('click',closeMore);
 $('#moreScrim').addEventListener('click',closeMore);
 
 var acctSheet=$('#acctSheet');
+/* with accounts configured, nothing opens until someone has signed in: lock from the first moment */
+try{var _lc=window.FOLIO_CONFIG&&window.FOLIO_CONFIG.supabase;if(_lc&&_lc.url&&_lc.anonKey){window.__acctLocked=true;document.documentElement.classList.add('needs-acct')}}catch(e){}
 function openAcct(){acctSheet.hidden=false}
 function closeAcct(){if(window.__acctLocked) return;acctSheet.hidden=true}
 $('#acctBtn').addEventListener('click',openAcct);
