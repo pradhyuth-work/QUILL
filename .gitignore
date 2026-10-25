@@ -3,3 +3,4 @@ node_modules/
 _incoming/
 .DS_Store
 Thumbs.db
+password.txt
