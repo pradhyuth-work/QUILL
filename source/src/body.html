@@ -182,7 +182,7 @@
         <span class="acct-orb a" aria-hidden="true"></span><span class="acct-orb b" aria-hidden="true"></span><span class="acct-orb c" aria-hidden="true"></span>
         <div class="acct-mark"><i></i>Quill</div>
         <h3 id="acctT">Carry your shelf with you</h3>
-        <p class="acct-tag">One shelf, every device you read on.</p>
+        <p class="acct-tag">One shelf, EVERYWHERE.</p>
       </div>
       <div class="acct-body">
         <div id="sbBox" hidden>
@@ -190,12 +190,12 @@
           <button class="btn-done" id="sbOut" type="button" hidden>Sign out</button>
           <div id="sbForm">
             <div class="field-ic">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M4 7l8 6 8-6"/></svg>
-              <input id="sbEmail" class="field" type="email" inputmode="email" autocomplete="username" placeholder="Email" aria-label="Email">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.2" r="3.4"/><path d="M4.8 19.6c1.3-3.9 3.9-5.9 7.2-5.9s5.9 2 7.2 5.9"/></svg>
+              <input id="sbEmail" class="field" type="text" inputmode="text" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="24" placeholder="Account ID" aria-label="Account ID">
             </div>
             <div class="field-ic">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2.4"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg>
-              <input id="sbPass" class="field" type="password" autocomplete="current-password" placeholder="Password (6+ characters)" aria-label="Password">
+              <input id="sbPass" class="field" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="current-password" placeholder="4-digit PIN" aria-label="4-digit PIN">
             </div>
             <div class="row2"><button class="btn-done" id="sbIn" type="button">Sign in</button><button class="btn-sec" id="sbUp" type="button">Create account</button></div>
           </div>
@@ -203,7 +203,7 @@
         </div>
         <p class="note" id="syncLine">Sign in to keep your shelf, reading positions and books in step across your devices.</p>
         <p class="note">Each account's shelf, including your books, follows you to wherever you sign in.</p>
-        <button class="btn-link" id="acctDone" type="button">Continue without an account</button>
+        <button class="btn-link" id="acctDone" type="button" hidden>Done</button>
       </div>
     </div>
   </div>

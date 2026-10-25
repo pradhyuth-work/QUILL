@@ -91,6 +91,10 @@
     function save(x){sess=x;try{if(x) localStorage.setItem(KEY,JSON.stringify(x));else localStorage.removeItem(KEY)}catch(e){}}
     function hdr(tok){return {'apikey':cfg.anonKey,'Authorization':'Bearer '+(tok||cfg.anonKey),'Content-Type':'application/json'}}
     function norm(j){return j&&j.access_token?{at:j.access_token,rt:j.refresh_token,exp:Date.now()+(j.expires_in||3600)*1000-30000,uid:j.user&&j.user.id}:null}
+    /* account IDs and PINs are the reader-facing identity; Supabase itself still speaks
+       email+password, so both are folded into values that satisfy it */
+    function toEmail(id){return id.toLowerCase().replace(/[^a-z0-9_.-]/g,'')+'@quill.local'}
+    function toPass(pin){return 'quill-pin-'+pin}
     async function auth(path,body){
       var r=await fetch(base+'/auth/v1/'+path,{method:'POST',headers:hdr(),body:JSON.stringify(body)});
       var j=await r.json().catch(function(){return {}});
@@ -105,10 +109,10 @@
     }
     return {
       signedIn:function(){return !!sess},
-      email:function(){return sess&&sess.email||''},
+      accountId:function(){return sess&&(sess.aid||sess.email)||''},
       uid:function(){return sess&&sess.uid||''},
-      signIn:async function(em,pw){var j=norm(await auth('token?grant_type=password',{email:em,password:pw}));if(!j) throw new Error('Sign in failed');j.email=em;save(j);return true},
-      signUp:async function(em,pw){var raw=await auth('signup',{email:em,password:pw});var j=norm(raw);if(!j){return 'confirm'}j.email=em;save(j);return true},
+      signIn:async function(id,pin){var j=norm(await auth('token?grant_type=password',{email:toEmail(id),password:toPass(pin)}));if(!j) throw new Error('Sign in failed');j.aid=id;save(j);return true},
+      signUp:async function(id,pin){var raw=await auth('signup',{email:toEmail(id),password:toPass(pin)});var j=norm(raw);if(!j){return 'confirm'}j.aid=id;save(j);return true},
       signOut:function(){save(null)},
       get:async function(){
         var t=await token();if(!t) throw new Error('signed out');
@@ -151,25 +155,29 @@
     var api=sb();box.hidden=false;
     var em=$('#sbEmail'),pw=$('#sbPass'),msg=$('#sbMsg'),inB=$('#sbIn'),upB=$('#sbUp'),outB=$('#sbOut'),form=$('#sbForm'),who=$('#sbWho');
     function paint(){
-      var on=api.signedIn();form.hidden=on;outB.hidden=!on;who.hidden=!on;who.textContent=on?('Signed in'+(api.email()?' as '+api.email():'')+'.'):'';
+      var on=api.signedIn();form.hidden=on;outB.hidden=!on;who.hidden=!on;who.textContent=on?('Signed in'+(api.accountId()?' as '+api.accountId():'')+'.'):'';
+      /* no skipping sign-in while this provider is in use: closeAcct() checks this */
+      window.__acctLocked=!on;
       var btn=$('#acctBtn'),done=$('#acctDone');
-      if(done) done.textContent=on?'Done':'Continue without an account';
+      if(done) done.hidden=!on;
       if(btn){
         btn.classList.toggle('on',on);
-        btn.setAttribute('aria-label',on?('Account, signed in'+(api.email()?' as '+api.email():'')):'Sign in');
+        btn.setAttribute('aria-label',on?('Account, signed in'+(api.accountId()?' as '+api.accountId():'')):'Sign in');
         btn.title=on?'Account':'Sign in';
       }
     }
+    pw.addEventListener('input',function(){pw.value=pw.value.replace(/\D/g,'').slice(0,4)});
     async function go(kind){
       var e=em.value.trim(),p=pw.value;
-      if(!/^\S+@\S+\.\S+$/.test(e)){msg.textContent='Enter a valid email.';return}
-      if(p.length<6){msg.textContent='Use a password of at least 6 characters.';return}
+      if(!/^[A-Za-z0-9_.-]{3,24}$/.test(e)){msg.textContent='Use an account ID of 3–24 letters, numbers, . _ or -.';return}
+      if(!/^\d{4}$/.test(p)){msg.textContent='Use a 4-digit PIN.';return}
       msg.textContent=kind==='up'?'Creating account…':'Signing in…';
       try{
         var r=kind==='up'?await api.signUp(e,p):await api.signIn(e,p);
-        if(r==='confirm'){msg.textContent='Check your email to confirm, then sign in.';return}
+        if(r==='confirm'){msg.textContent='Could not finish creating the account (email confirmation is on for this project).';return}
         pw.value='';msg.textContent='';paint();ref=api;
         switchAccount('u:'+api.uid());
+        closeAcct();
         line('Syncing…');await pull();
       }catch(x){msg.textContent=String(x.message||x).slice(0,140)}
     }

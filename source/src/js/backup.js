@@ -19,7 +19,7 @@ $('#moreScrim').addEventListener('click',closeMore);
 
 var acctSheet=$('#acctSheet');
 function openAcct(){acctSheet.hidden=false}
-function closeAcct(){acctSheet.hidden=true}
+function closeAcct(){if(window.__acctLocked) return;acctSheet.hidden=true}
 $('#acctBtn').addEventListener('click',openAcct);
 $('#acctDone').addEventListener('click',closeAcct);
 $('#acctScrim').addEventListener('click',closeAcct);

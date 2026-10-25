@@ -1,5 +1,5 @@
 /* Quill service worker: precaches the app + PDF engine so it opens and imports offline. */
-var VER='folio-f26f828e1b';
+var VER='folio-e924c97e9b';
 var CORE=[
  "./",
  "config.js",
