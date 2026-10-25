@@ -17,6 +17,13 @@ $('#moreBtn').addEventListener('click',openMore);
 $('#moreDone').addEventListener('click',closeMore);
 $('#moreScrim').addEventListener('click',closeMore);
 
+var acctSheet=$('#acctSheet');
+function openAcct(){acctSheet.hidden=false}
+function closeAcct(){acctSheet.hidden=true}
+$('#acctBtn').addEventListener('click',openAcct);
+$('#acctDone').addEventListener('click',closeAcct);
+$('#acctScrim').addEventListener('click',closeAcct);
+
 async function saveFile(name,blob){
   try{
     var dl=window.claude&&await window.claude.use('downloads');
@@ -66,6 +73,7 @@ $('#bkImport').addEventListener('change',async function(e){
       var probe;
       try{probe=buildBook({id:r.id,title:String(r.meta.title).slice(0,200),author:String(r.meta.author||'Your upload'),tag:r.meta.tag||'PDF',alt:true,lang:r.meta.lang},r.chapters)}catch(err){skipped++;continue}
       await FolioDB.putBook({id:r.id,meta:r.meta,chapters:r.chapters});
+      if(window.__bookPush) window.__bookPush(r.id,r.meta,r.chapters);
       var kvu=(data.kv.ups&&data.kv.ups[r.id])||{};
       var m=(data.kv.meta&&data.kv.meta[r.id])||{};
       probe.title=m.title||probe.title;

@@ -10,7 +10,7 @@ window.addEventListener('error',function(e){onFatal(e&&e.message||e)});
 window.addEventListener('unhandledrejection',function(e){onFatal(e&&e.reason&&e.reason.message||e&&e.reason)});
 
 /* modal dialogs: move focus in, keep Tab inside, give focus back on close */
-var MODALS=['#sheet','#rnSheet','#gSheet','#moreSheet','#pwSheet','#ocrSheet','#lb'];
+var MODALS=['#sheet','#rnSheet','#gSheet','#moreSheet','#acctSheet','#pwSheet','#ocrSheet','#lb'];
 var openerOf={};
 function visibleModal(){
   for(var i=0;i<MODALS.length;i++){var el=$(MODALS[i]);if(el&&!el.hidden) return el}
@@ -36,6 +36,7 @@ document.addEventListener('keydown',function(e){
   if(!m) return;
   if(e.key==='Escape'){
     if(m.id==='moreSheet') closeMore();
+    else if(m.id==='acctSheet') closeAcct();
     else if(m.id==='pwSheet'||m.id==='ocrSheet'){var no=m.querySelector('[data-r=no]');if(no) no.click()}
     return;
   }

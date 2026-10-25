@@ -26,7 +26,7 @@ function tile(b,ix,n){
     '<button type="button" data-a="del" class="'+(arm?'arm':'')+'" aria-label="'+(arm?'Confirm delete ':'Delete ')+esc(b.title)+'">'+(arm?'Delete?':IC.bin)+'</button>'+
     '</div></div>';
 }
-var ADD='<div class="book add"><div class="cover">'+ICON.plus+'<div class="ct">Add a book</div><div class="ca">PDF or text file</div></div><input class="ov" type="file" accept=".pdf,.txt,.md,application/pdf,text/plain" aria-label="Add a book from a PDF or text file"></div>';
+var ADD='<div class="book add"><div class="cover">'+ICON.plus+'<div class="ct">Add a book</div><div class="ca">PDF or text file</div></div><input class="ov" type="file" accept=".pdf,.txt,.md,application/pdf,text/plain" multiple aria-label="Add one or more books from PDF or text files"></div>';
 function renderChips(){
   var box=$('#fchips');
   box.hidden=!(groups.length||edit);
@@ -61,9 +61,9 @@ function renderShelf(focusSel){
 $('#shelf').addEventListener('change',function(e){
   var inp=e.target;
   if(!inp||inp.type!=='file') return;
-  var f=inp.files&&inp.files[0];
+  var files=inp.files?Array.prototype.slice.call(inp.files):[];
   inp.value='';
-  if(f) importFile(f);
+  if(files.length) importFiles(files);
 });
 function bookById(id){return books.filter(function(x){return x.id===id})[0]}
 $('#shelf').addEventListener('click',function(e){
@@ -98,7 +98,7 @@ $('#shelf').addEventListener('click',function(e){
     clearTimeout(delT);delId=null;
     books.splice(books.indexOf(bk),1);
     if(builtins.indexOf(bk)>=0){if(gone.indexOf(bk.id)<0) gone.push(bk.id)}
-    else{delete ups[bk.id];persistUps();FolioDB.delBook(bk.id)}
+    else{delete ups[bk.id];persistUps();FolioDB.delBook(bk.id);if(window.__bookDel) window.__bookDel(bk.id)}
     store.del('pos:'+bk.id);
     persistLib();
     renderShelf();

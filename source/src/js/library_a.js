@@ -1,30 +1,43 @@
 /* ---------- shelf: groups, colours, order, rename, delete ---------- */
 var PALN=8,PALNAMES=["Sage", "Sand", "Blush", "Sky", "Lavender", "Butter", "Peach", "Mist"];
-var gone=store.get('gone',[]),ups=store.get('ups',{}),metaO=store.get('meta',{}),orderO=store.get('order',[]);
-var groups=store.get('groups',[]),flt=store.get('flt','all');
+var gone,ups,metaO,orderO,groups,flt,books;
 var DEMO=/*@@DEMO@@*/[];
 var demo=buildBook({id:'figures-demo',title:'Pictures in the Flow',author:'Demo book',tag:'Demo',alt:true,note:'3 figures',trusted:true},DEMO);
 vedic.color=0;sample.color=-1;demo.color=3;
 var builtins=[vedic,sample,demo];builtins.forEach(function(b){b.n=b.items.length});
-var books=builtins.filter(function(b){return gone.indexOf(b.id)<0});
-Object.keys(ups).forEach(function(id){
-  var u=ups[id];
-  if(!u||typeof u!=='object'||!/^[A-Za-z0-9_-]{1,64}$/.test(id)) return;
-  /* shelf stubs only: the text is read from storage when the book is opened */
-  books.push({id:id,title:u.title||'Untitled',author:u.author||'Your upload',tag:u.tag||'PDF',alt:true,note:u.note,words:u.words||0,n:u.n||0,cover:u.cover||'',lang:u.lang,items:null,chapters:null,stub:true});
-});
 function groupById(id){return groups.filter(function(g){return g.id===id})[0]}
-books.forEach(function(b){
-  var m=metaO[b.id];
-  if(m){if(m.title) b.title=m.title;if(typeof m.color==='number') b.color=m.color;if(m.plain) b.plain=true;if(typeof m.group==='string') b.group=m.group}
-  if(typeof b.color!=='number') b.color=-1;
-  if(typeof b.group!=='string'||!groupById(b.group)) b.group='';
-});
-if(flt!=='all'&&!groupById(flt)) flt='all';
-books.sort(function(a,b){
-  var i=orderO.indexOf(a.id),j=orderO.indexOf(b.id);
-  return (i<0?999:i)-(j<0?999:j);
-});
+function reloadLibrary(){
+  gone=store.get('gone',[]);ups=store.get('ups',{});metaO=store.get('meta',{});orderO=store.get('order',[]);
+  groups=store.get('groups',[]);flt=store.get('flt','all');
+  books=builtins.filter(function(b){return gone.indexOf(b.id)<0});
+  Object.keys(ups).forEach(function(id){
+    var u=ups[id];
+    if(!u||typeof u!=='object'||!/^[A-Za-z0-9_-]{1,64}$/.test(id)) return;
+    /* shelf stubs only: the text is read from storage when the book is opened */
+    books.push({id:id,title:u.title||'Untitled',author:u.author||'Your upload',tag:u.tag||'PDF',alt:true,note:u.note,words:u.words||0,n:u.n||0,cover:u.cover||'',lang:u.lang,items:null,chapters:null,stub:true});
+  });
+  books.forEach(function(b){
+    var m=metaO[b.id];
+    if(m){if(m.title) b.title=m.title;if(typeof m.color==='number') b.color=m.color;if(m.plain) b.plain=true;if(typeof m.group==='string') b.group=m.group}
+    if(typeof b.color!=='number') b.color=-1;
+    if(typeof b.group!=='string'||!groupById(b.group)) b.group='';
+  });
+  if(flt!=='all'&&!groupById(flt)) flt='all';
+  books.sort(function(a,b){
+    var i=orderO.indexOf(a.id),j=orderO.indexOf(b.id);
+    return (i<0?999:i)-(j<0?999:j);
+  });
+}
+reloadLibrary();
+/* each signed-in account gets its own shelf and settings on this device: called on sign in, sign up and sign out */
+function switchAccount(scopeId){
+  if(!$('#reader').hidden) $('#back').click();
+  store.setScope(scopeId);
+  reloadLibrary();
+  S.fs=store.get('fs',19);S.theme=store.get('theme','auto');S.rate=store.get('rate',1);S.voice=store.get('voice','');
+  applyTheme();applyFs();applyRate();
+  renderShelf();
+}
 function persistLib(){
   store.set('order',books.map(function(b){return b.id}));
   var m={};books.forEach(function(b){m[b.id]={title:b.title,color:b.color,group:b.group,plain:!!b.plain}});

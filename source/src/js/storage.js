@@ -44,11 +44,20 @@ var FolioDB=(function(){
     });
   }
   function sched(){if(!flushT) flushT=setTimeout(flush,120)}
+  /* each signed-in account gets its own shelf on this device: logical keys are transparently
+     namespaced by the active scope, while a signed-out (local) scope keeps the original,
+     unprefixed keys so existing libraries are not disturbed */
+  var scope='',SEP='::acct::';
+  function pkey(k){return scope?scope+SEP+k:k}
   var store={
-    get:function(k,d){return Object.prototype.hasOwnProperty.call(cache,k)?cache[k]:d},
-    set:function(k,v){cache[k]=v;dirty[k]=1;sched()},
-    del:function(k){delete cache[k];dirty[k]=2;sched()},
-    keys:function(){return Object.keys(cache)}
+    get:function(k,d){k=pkey(k);return Object.prototype.hasOwnProperty.call(cache,k)?cache[k]:d},
+    set:function(k,v){k=pkey(k);cache[k]=v;dirty[k]=1;sched()},
+    del:function(k){k=pkey(k);delete cache[k];dirty[k]=2;sched()},
+    keys:function(){
+      var pre=scope?scope+SEP:'';
+      return Object.keys(cache).filter(function(k){return pre?k.indexOf(pre)===0:k.indexOf(SEP)<0}).map(function(k){return pre?k.slice(pre.length):k});
+    },
+    setScope:function(s){scope=s||''}
   };
   var api={
     store:store,
@@ -104,6 +113,12 @@ var FolioDB=(function(){
           }
           if(fixed){cache.ups=idx;dirty.ups=1;await flush()}
         }
+      }catch(e){}
+      /* if a Supabase session is already on this device, scope the shelf to that account
+         before the rest of the app reads it, so a different account never sees it */
+      try{
+        var sbSess=JSON.parse(localStorage.getItem('folio:sb')||'null');
+        if(sbSess&&sbSess.uid) store.setScope('u:'+sbSess.uid);
       }catch(e){}
       return api;
     },

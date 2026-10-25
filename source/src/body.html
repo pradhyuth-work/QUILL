@@ -4,7 +4,7 @@
   <section class="view" id="library" aria-label="Library">
     <div class="lib-top">
       <div class="brand"><i></i>Quill</div>
-      <div class="topr"><button class="ib" id="moreBtn" aria-label="Backup, storage and help" title="More"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button><button class="chip" id="editBtn" type="button" aria-pressed="false">Edit</button><button class="ib" id="themeBtn" aria-label="Change theme" title="Theme">
+      <div class="topr"><button class="ib" id="moreBtn" aria-label="Backup, storage and help" title="More"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button><button class="ib" id="acctBtn" aria-label="Sign in" title="Account"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.2" r="3.4"/><path d="M4.8 19.6c1.3-3.9 3.9-5.9 7.2-5.9s5.9 2 7.2 5.9"/></svg></button><button class="chip" id="editBtn" type="button" aria-pressed="false">Edit</button><button class="ib" id="themeBtn" aria-label="Change theme" title="Theme">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>
       </button></div>
     </div>
@@ -15,7 +15,7 @@
       <div id="gManage" hidden style="margin:-8px 0 18px"><button class="chip" type="button">Edit this group</button></div>
       <div id="shelf"></div>
       <div id="restoreWrap" hidden><button class="chip restore" id="restore" type="button">Restore sample books</button></div>
-      <p class="foot">Books are read on this device and never uploaded. Listening uses the free voice built into your phone or computer.</p>
+      <p class="foot">Books stay on this device unless you sign in, which syncs them to your account so they follow you to another device. Listening uses the free voice built into your phone or computer.</p>
     </div>
   </section>
 
@@ -170,20 +170,29 @@
       <button class="btn-done" id="bkExport" type="button">Export a backup</button>
       <label class="btn-sec filebtn" for="bkImport" id="bkImportL" role="button" tabindex="0">Restore from a backup</label>
       <input id="bkImport" type="file" accept=".json,application/json" hidden>
-      <div class="row" style="margin-top:14px"><span>Sync</span></div>
+      <p class="note">Quill keeps your books in this browser, and in your account too if you are signed in. Export a backup for a copy outside Quill either way.</p>
+      <button class="btn-sec" id="moreDone" type="button">Close</button>
+    </div>
+  </div>
+
+  <div class="sheet-wrap" id="acctSheet" hidden>
+    <div class="scrim" id="acctScrim"></div>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="acctT">
+      <div class="grab"></div>
+      <h3 id="acctT">Account</h3>
       <div id="sbBox" hidden>
         <p class="note" id="sbWho" hidden></p>
+        <button class="btn-done" id="sbOut" type="button" hidden>Sign out</button>
         <div id="sbForm">
           <input id="sbEmail" class="field" type="email" inputmode="email" autocomplete="username" placeholder="Email" aria-label="Email">
           <input id="sbPass" class="field" type="password" autocomplete="current-password" placeholder="Password (6+ characters)" aria-label="Password">
           <div class="row2"><button class="btn-done" id="sbIn" type="button">Sign in</button><button class="btn-sec" id="sbUp" type="button">Create account</button></div>
         </div>
         <p class="note" id="sbMsg" role="status"></p>
-        <button class="btn-sec" id="sbOut" type="button" hidden>Sign out</button>
       </div>
-      <p class="note" id="syncLine">Reading positions and shelf order sync across your devices when you are signed in to Claude. Book text stays on each device.</p>
-      <p class="note">Quill keeps your books in this browser only. Clearing site data removes them, so export a backup now and then.</p>
-      <button class="btn-sec" id="moreDone" type="button">Close</button>
+      <p class="note" id="syncLine">Sign in to keep your shelf, reading positions and books in step across your devices.</p>
+      <p class="note">Each account's shelf, including your books, follows you to wherever you sign in.</p>
+      <button class="btn-sec" id="acctDone" type="button">Close</button>
     </div>
   </div>
   <div class="toast" id="toast" role="status"></div>

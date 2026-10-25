@@ -28,7 +28,7 @@ head_extra='''<script src="config.js"></script>
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
-<meta name="description" content="Read or listen to your own PDFs as swipeable cards. Private, offline, nothing leaves your device.">
+<meta name="description" content="Read or listen to your own PDFs as swipeable cards. Private and offline, with your books staying on your device unless you choose to sync them to your account.">
 '''
 page='<!doctype html>\n<html lang="en">\n<head>\n'+head_extra+html
 # the artifact fragment starts with head content then body; make sure a <body> boundary exists

@@ -123,13 +123,15 @@ async function importFile(file){
   var b=buildBook(meta0,chapters);
   b.color=nextColor();
   b.group=(flt!=='all'&&groupById(flt))?flt:'';
+  var meta={id:b.id,title:b.title,author:b.author,tag:b.tag,alt:true,lang:lang,words:b.words,n:b.items.length,cover:b.cover||''};
   var saved=true;
-  try{await FolioDB.putBook({id:b.id,meta:{id:b.id,title:b.title,author:b.author,tag:b.tag,alt:true,lang:lang,words:b.words,n:b.items.length,cover:b.cover||''},chapters:chapters})}catch(e){saved=false}
+  try{await FolioDB.putBook({id:b.id,meta:meta,chapters:chapters})}catch(e){saved=false}
   if(saved){
     ups[b.id]={id:b.id,title:b.title,author:b.author,tag:b.tag,words:b.words,n:b.items.length,cover:b.cover||'',lang:lang};
     b.n=b.items.length;persistUps();
     if(builtins.indexOf(b)<0){b.items=null;b.chapters=null;b.stub=true}
     FolioDB.persist();
+    if(window.__bookPush) window.__bookPush(b.id,meta,chapters);
   }else{b.n=b.items.length}
   books.push(b);
   persistLib();
@@ -138,6 +140,10 @@ async function importFile(file){
   renderShelf();
   var warn=stats&&stats.badPages?' · '+stats.badPages+' page'+(stats.badPages>1?'s':'')+' could not be read':'';
   toast((saved?'Added “'+title+'”':'Added “'+title+'” · this browser would not keep it, so it will be gone when you close the page. Export a backup from the shelf.')+warn);
+}
+/* add several books in one go: files are imported one at a time so storage and progress stay reliable */
+async function importFiles(files){
+  for(var i=0;i<files.length;i++) await importFile(files[i]);
 }
 function unbusyKeep(){$('#busy').hidden=true}
 $('#busyCancel').addEventListener('click',function(){if(cancelFlag) cancelFlag.cancelled=true});
@@ -158,9 +164,11 @@ async function removeImage(it){
   if(!blk||blk.type!=='img') return;
   var snap=ch.blocks.slice(),pos=cards[curCard]?cards[curCard].first:0;
   ch.blocks.splice(it.bi,1);
+  var meta={id:book.id,title:book.title,author:book.author,tag:book.tag,alt:true,lang:book.lang,words:book.words,n:book.items.length,cover:book.cover||''};
   try{
-    await FolioDB.putBook({id:book.id,meta:{id:book.id,title:book.title,author:book.author,tag:book.tag,alt:true,lang:book.lang,words:book.words,n:book.items.length,cover:book.cover||''},chapters:chs});
+    await FolioDB.putBook({id:book.id,meta:meta,chapters:chs});
   }catch(e){ch.blocks=snap;toast('Could not save that change.');return}
+  if(window.__bookPush) window.__bookPush(book.id,meta,chs);
   buildBook(book,chs);
   book.n=book.items.length;
   if(ups[book.id]){ups[book.id].n=book.n;ups[book.id].words=book.words;persistUps()}

@@ -3,13 +3,32 @@ async function openBook(b){
   var P=window.__perf={t0:performance.now()};
   if(!b.items){
     var rec=await FolioDB.getBook(b.id);P.read=performance.now()-P.t0;
+    if(!rec&&b.remote&&window.__bookPull){
+      /* on the shelf from another device via account sync, but not downloaded here yet */
+      $('#busyCancel').hidden=true;busy('Downloading your book',0.25);
+      var dl=null;try{dl=await window.__bookPull(b.id)}catch(e){}
+      if(dl&&dl.chapters){
+        try{
+          await FolioDB.putBook({id:b.id,meta:dl.meta||{},chapters:dl.chapters});
+          rec=await FolioDB.getBook(b.id);
+          if(rec&&ups[b.id]){
+            ups[b.id].cover=rec.meta&&rec.meta.cover||'';
+            ups[b.id].words=(rec.meta&&rec.meta.words)||ups[b.id].words;
+            ups[b.id].n=(rec.meta&&rec.meta.n)||ups[b.id].n;
+            persistUps();
+          }
+        }catch(e){rec=null}
+      }
+      unbusy();$('#busyCancel').hidden=false;
+      if(!rec){toast('Could not download this book. Check your connection and try again.');return}
+    }
     if(!rec){
       /* the shelf entry outlived the book: tidy up */
       books.splice(books.indexOf(b),1);delete ups[b.id];persistUps();persistLib();renderShelf();
       toast('That book is no longer stored on this device, so it was taken off the shelf. Restore it from a backup or add it again.');return;
     }
     if(!rec.chapters){toast('This book could not be loaded from storage. Remove it and add it again.');return}
-    try{buildBook(b,rec.chapters);b.stub=false;P.build=performance.now()-P.t0}catch(e){toast('This book could not be opened.');return}
+    try{buildBook(b,rec.chapters);b.stub=false;b.remote=false;P.build=performance.now()-P.t0}catch(e){toast('This book could not be opened.');return}
   }
   book=b;loadVoices();
   $('#library').hidden=true;$('#reader').hidden=false;

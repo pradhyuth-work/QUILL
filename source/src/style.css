@@ -77,6 +77,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,.scroller:focus-vi
 }
 .ib:hover{background:var(--bg)}
 .ib svg{display:block}
+.ib.on{color:var(--accent)}
 
 /* ---------- Library ---------- */
 .lib-top{display:flex;justify-content:space-between;align-items:center;padding:12px 10px 0 24px}

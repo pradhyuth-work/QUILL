@@ -1,16 +1,35 @@
 /* ---------- optional sync of reading positions and shelf organisation across devices ----------
-   Uses the host's private per-user store when present. Book text never leaves the device. */
+   Uses the host's private per-user store when present. For the Supabase provider, a signed-in
+   reader's book text syncs too (to that reader's own Supabase project), so their shelf follows
+   them to another device; without an account, books stay device-only as before. */
 (function(){
   var cl=window.claude,cfg=window.FOLIO_CONFIG&&window.FOLIO_CONFIG.supabase;
   var hasClaude=cl&&typeof cl.use==='function',hasSb=!!(cfg&&cfg.url&&cfg.anonKey);
   if(!hasClaude&&!hasSb) return;
   var ref=null,pushing=false,again=false,pushT=0,status='';
   function line(t){var e=$('#syncLine');if(e) e.textContent=t}
+  /* best-effort: a book's own content syncs separately from the position/shelf snapshot below,
+     so one large or offline book never blocks the rest of the shelf from staying in sync */
+  window.__bookPush=async function(id,meta,chapters){
+    if(!ref||typeof ref.putBook!=='function') return;
+    try{await ref.putBook(id,meta,chapters)}catch(e){}
+  };
+  window.__bookPull=async function(id){
+    if(!ref||typeof ref.getBook!=='function') return null;
+    try{return await ref.getBook(id)}catch(e){return null}
+  };
+  window.__bookDel=async function(id){
+    if(!ref||typeof ref.delBook!=='function') return;
+    try{await ref.delBook(id)}catch(e){}
+  };
   function snapshot(){
     var pos={};
     books.forEach(function(b){var p=store.get('pos:'+b.id);if(p!=null) pos[b.id]={i:p,t:store.get('post:'+b.id,0)}});
     var meta={};books.forEach(function(b){meta[b.id]={title:b.title,color:b.color,group:b.group,plain:!!b.plain}});
-    return {v:1,pos:pos,shelfT:store.get('shelfT',0),order:books.map(function(b){return b.id}),meta:meta,groups:groups,settings:{fs:S.fs,theme:S.theme,rate:S.rate},at:Date.now()};
+    /* a lightweight index of this reader's uploads (no cover, no text) so another device can show
+       stub entries for books it has not downloaded yet; the text itself syncs via __bookPush */
+    var upsOut={};Object.keys(ups).forEach(function(id){var u=ups[id];upsOut[id]={title:u.title,author:u.author,tag:u.tag,words:u.words,n:u.n,lang:u.lang}});
+    return {v:1,pos:pos,shelfT:store.get('shelfT',0),order:books.map(function(b){return b.id}),meta:meta,groups:groups,ups:upsOut,settings:{fs:S.fs,theme:S.theme,rate:S.rate},at:Date.now()};
   }
   async function push(){
     if(!ref) return;
@@ -25,6 +44,20 @@
   function merge(r){
     if(!r||r.v!==1) return false;
     var changed=false;
+    /* a book this account has on another device but not this one: add it as a stub, downloaded
+       on demand when opened (see reader_c.js), so positions below can apply to it too */
+    if(r.ups&&typeof r.ups==='object'){
+      var added=false;
+      Object.keys(r.ups).forEach(function(id){
+        if(!/^[A-Za-z0-9_-]{1,64}$/.test(id)||ups[id]||builtins.some(function(b){return b.id===id})) return;
+        var u=r.ups[id];if(!u||typeof u!=='object') return;
+        var entry={id:id,title:String(u.title||'Untitled').slice(0,200),author:String(u.author||'Your upload').slice(0,120),tag:String(u.tag||'PDF').slice(0,20),words:+u.words||0,n:+u.n||0,cover:'',lang:u.lang,remote:true};
+        ups[id]=entry;
+        books.push({id:id,title:entry.title,author:entry.author,tag:entry.tag,alt:true,words:entry.words,n:entry.n,cover:'',lang:entry.lang,items:null,chapters:null,stub:true,remote:true});
+        added=true;changed=true;
+      });
+      if(added) persistUps();
+    }
     if(r.pos&&typeof r.pos==='object') Object.keys(r.pos).forEach(function(id){
       var p=r.pos[id];
       if(!p||typeof p.i!=='number'||!books.some(function(b){return b.id===id})) return;
@@ -73,6 +106,7 @@
     return {
       signedIn:function(){return !!sess},
       email:function(){return sess&&sess.email||''},
+      uid:function(){return sess&&sess.uid||''},
       signIn:async function(em,pw){var j=norm(await auth('token?grant_type=password',{email:em,password:pw}));if(!j) throw new Error('Sign in failed');j.email=em;save(j);return true},
       signUp:async function(em,pw){var raw=await auth('signup',{email:em,password:pw});var j=norm(raw);if(!j){return 'confirm'}j.email=em;save(j);return true},
       signOut:function(){save(null)},
@@ -87,12 +121,29 @@
         var h=hdr(t);h['Prefer']='resolution=merge-duplicates,return=minimal';
         var r=await fetch(base+'/rest/v1/folio_state?on_conflict=user_id',{method:'POST',headers:h,body:JSON.stringify({user_id:sess.uid,data:d,updated_at:new Date().toISOString()})});
         if(!r.ok) throw new Error('HTTP '+r.status);
+      },
+      putBook:async function(id,meta,chapters){
+        var t=await token();if(!t) throw new Error('signed out');
+        var h=hdr(t);h['Prefer']='resolution=merge-duplicates,return=minimal';
+        var r=await fetch(base+'/rest/v1/folio_books?on_conflict=user_id,book_id',{method:'POST',headers:h,body:JSON.stringify({user_id:sess.uid,book_id:id,meta:meta,chapters:chapters,updated_at:new Date().toISOString()})});
+        if(!r.ok) throw new Error('HTTP '+r.status);
+      },
+      getBook:async function(id){
+        var t=await token();if(!t) throw new Error('signed out');
+        var r=await fetch(base+'/rest/v1/folio_books?select=meta,chapters&user_id=eq.'+encodeURIComponent(sess.uid)+'&book_id=eq.'+encodeURIComponent(id),{headers:hdr(t)});
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        var a=await r.json();return a&&a[0]?{meta:a[0].meta,chapters:a[0].chapters}:null;
+      },
+      delBook:async function(id){
+        var t=await token();if(!t) throw new Error('signed out');
+        var r=await fetch(base+'/rest/v1/folio_books?user_id=eq.'+encodeURIComponent(sess.uid)+'&book_id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:hdr(t)});
+        if(!r.ok) throw new Error('HTTP '+r.status);
       }
     };
   }
   async function pull(){
     var d=await ref.get();
-    if(d&&merge(d)){renderShelf();line('Synced just now.')}else line('Synced. Reading positions and shelf order follow you between devices.');
+    if(d&&merge(d)){renderShelf();line('Synced just now.')}else line('Synced. Your shelf and reading positions follow you between devices.');
     schedule();
   }
   function setup(){
@@ -101,6 +152,12 @@
     var em=$('#sbEmail'),pw=$('#sbPass'),msg=$('#sbMsg'),inB=$('#sbIn'),upB=$('#sbUp'),outB=$('#sbOut'),form=$('#sbForm'),who=$('#sbWho');
     function paint(){
       var on=api.signedIn();form.hidden=on;outB.hidden=!on;who.hidden=!on;who.textContent=on?('Signed in'+(api.email()?' as '+api.email():'')+'.'):'';
+      var btn=$('#acctBtn');
+      if(btn){
+        btn.classList.toggle('on',on);
+        btn.setAttribute('aria-label',on?('Account, signed in'+(api.email()?' as '+api.email():'')):'Sign in');
+        btn.title=on?'Account':'Sign in';
+      }
     }
     async function go(kind){
       var e=em.value.trim(),p=pw.value;
@@ -111,14 +168,15 @@
         var r=kind==='up'?await api.signUp(e,p):await api.signIn(e,p);
         if(r==='confirm'){msg.textContent='Check your email to confirm, then sign in.';return}
         pw.value='';msg.textContent='';paint();ref=api;
+        switchAccount('u:'+api.uid());
         line('Syncing…');await pull();
       }catch(x){msg.textContent=String(x.message||x).slice(0,140)}
     }
     inB.addEventListener('click',function(){go('in')});upB.addEventListener('click',function(){go('up')});
-    outB.addEventListener('click',function(){api.signOut();ref=null;clearTimeout(pushT);paint();line('Signed out. Your library stays on this device.')});
+    outB.addEventListener('click',function(){api.signOut();ref=null;clearTimeout(pushT);paint();switchAccount('');line('Signed out. Your library stays on this device.')});
     paint();
     if(api.signedIn()){ref=api;line('Syncing…');pull().catch(function(){line('Sync is paused: offline or signed out.')})}
-    else line('Sign in to keep reading positions and shelf order in step across your devices. Book text stays on each device.');
+    else line('Sign in to keep your shelf, reading positions and books in step across your devices.');
   }
   if(hasSb&&!hasClaude){ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',setup);else setup(); return }
   if(hasSb){ /* both present: prefer Supabase only when explicitly configured */ setup(); return }
@@ -128,6 +186,7 @@
       if(!db||!user||!user.id){line('Sync is not available in this view. Your library stays on this device.');return}
       var uid=await user.id();
       if(!uid){line('Sign in to Claude to sync positions between devices.');return}
+      switchAccount('u:'+uid);
       ref=db.doc('data/users/'+uid+'/folio');
       var snap=await ref.get();
       if(snap&&snap.exists&&merge(snap.data())){renderShelf();line('Synced just now.')}
