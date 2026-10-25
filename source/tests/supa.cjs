@@ -50,9 +50,9 @@ function sbRoute(route){
     await pg.route(u=>!u.href.startsWith(base)&&!u.href.startsWith(SB),r=>r.abort());
     await pg.goto(base+'/');await pg.waitForSelector('.book');return pg;
   }
-  const openMore=async pg=>{await pg.click('#moreBtn');await pg.waitForSelector('#moreSheet:not([hidden])')};
+  const openAcct=async pg=>{await pg.click('#acctBtn');await pg.waitForSelector('#acctSheet:not([hidden])')};
   // --- device A
-  const A=await device();await openMore(A);
+  const A=await device();await openAcct(A);
   T.ok('account box visible when configured',await A.isVisible('#sbBox'));
   await A.fill('#sbEmail','a@x.com');await A.fill('#sbPass','wrongpw');await A.click('#sbIn');
   await A.waitForFunction(()=>/Invalid/.test(document.getElementById('sbMsg').textContent));
@@ -60,33 +60,35 @@ function sbRoute(route){
   await A.fill('#sbPass','secret1');await A.click('#sbIn');
   await A.waitForSelector('#sbOut:not([hidden])');
   T.ok('sign in works',/Signed in as a@x.com/.test(await A.textContent('#sbWho')));
-  await A.click('#moreDone');
-  await A.click('.book[data-id="vedic-report"]');await A.waitForSelector('#scroller .card');await A.waitForTimeout(600);
-  await A.evaluate(()=>{const s=document.getElementById('scroller');s.scrollTop=12*s.clientHeight});
+  await A.click('#acctDone');
+  await A.click('.book[data-id="figures-demo"]');await A.waitForSelector('#scroller .card');await A.waitForTimeout(600);
+  /* figures-demo is short, so this uses a shallow position (2) rather than the deep one
+     that fit the removed, much longer vedic-report */
+  await A.evaluate(()=>{const s=document.getElementById('scroller');s.scrollTop=2*s.clientHeight});
   await A.waitForTimeout(500);
-  const posA=await A.evaluate(()=>+(JSON.parse(localStorage.getItem('folio:pos:vedic-report')||'null')??-1));
+  const posA=await A.evaluate(()=>+(JSON.parse(localStorage.getItem('folio:pos:figures-demo')||'null')??-1));
   await A.waitForTimeout(5500);
   const row=rows[users['a@x.com'].id];
-  T.ok('position pushed to Supabase after reading',row&&row.pos&&row.pos['vedic-report']&&row.pos['vedic-report'].i>0,row&&row.pos);
+  T.ok('position pushed to Supabase after reading',row&&row.pos&&row.pos['figures-demo']&&row.pos['figures-demo'].i>0,row&&row.pos);
   T.ok('only small data is uploaded (no book text)',JSON.stringify(row).length<5000,JSON.stringify(row).length);
   // --- device B
-  const B=await device();await openMore(B);
+  const B=await device();await openAcct(B);
   await B.fill('#sbEmail','a@x.com');await B.fill('#sbPass','secret1');await B.click('#sbIn');
   await B.waitForSelector('#sbOut:not([hidden])');await B.waitForTimeout(800);
   const posB=await B.evaluate(()=>{try{return window.__posDbg?window.__posDbg():null}catch(e){return null}});
-  await B.click('#moreDone');await B.click('.book[data-id="vedic-report"]');await B.waitForSelector('#scroller .card');await B.waitForTimeout(900);
+  await B.click('#acctDone');await B.click('.book[data-id="figures-demo"]');await B.waitForSelector('#scroller .card');await B.waitForTimeout(900);
   const cardB=await B.evaluate(()=>Math.round(document.getElementById('scroller').scrollTop/document.getElementById('scroller').clientHeight));
-  T.ok('device B resumes at the position device A reached',cardB>=8,cardB);
+  T.ok('device B resumes at the position device A reached',cardB>=1,cardB);
   // --- persistence of session across reload
-  await B.click('#back');await B.reload();await B.waitForSelector('.book');await openMore(B);
+  await B.click('#back');await B.reload();await B.waitForSelector('.book');await openAcct(B);
   T.ok('session survives a reload',await B.isVisible('#sbOut'));
   // --- expired token refreshes
   await B.evaluate(()=>{const k='folio:sb';const o=JSON.parse(localStorage.getItem(k));o.exp=1;localStorage.setItem(k,JSON.stringify(o))});
   calls=[];await B.reload();await B.waitForSelector('.book');await B.waitForTimeout(1200);
   T.ok('expired token is refreshed automatically',calls.some(c=>/grant_type=refresh_token/.test(c))&&calls.some(c=>/^GET \/rest/.test(c)),calls);
   // --- server error is reported, not thrown
-  failRest=true;await openMore(B);await B.waitForTimeout(300);
-  await B.reload();await B.waitForSelector('.book');await openMore(B);await B.waitForTimeout(1200);
+  failRest=true;await openAcct(B);await B.waitForTimeout(300);
+  await B.reload();await B.waitForSelector('.book');await openAcct(B);await B.waitForTimeout(1200);
   T.ok('server error shows a paused message',/paused/i.test(await B.textContent('#syncLine')),await B.textContent('#syncLine'));
   failRest=false;
   // --- sign out
@@ -106,7 +108,7 @@ function sbRoute(route){
   // --- not configured => no account UI
   const ctx=await br.newContext({serviceWorkers:'block'});const C=await ctx.newPage();
   await C.route(u=>u.pathname==='/config.js',r=>r.fulfill({status:200,contentType:'text/javascript',body:'window.FOLIO_CONFIG={supabase:{url:"",anonKey:""}};'}));
-  await C.goto(base+'/');await C.waitForSelector('.book');await C.click('#moreBtn');
+  await C.goto(base+'/');await C.waitForSelector('.book');await C.click('#acctBtn');await C.waitForSelector('#acctSheet:not([hidden])');
   T.ok('no account UI when not configured',!(await C.isVisible('#sbBox')));
   await br.close();s.close();T.done();
 })();

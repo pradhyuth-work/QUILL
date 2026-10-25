@@ -10,7 +10,7 @@ const VP=[[320,568],[360,640],[375,667],[390,844],[412,915],[430,932],[768,1024]
     T.ok(`${w}x${h} library has no horizontal overflow`,!lib.hs&&lib.off===0,lib);
     const res={};
     for(const fs of [19,26]){
-      await pg.click('.book[data-id="vedic-report"]');await pg.waitForSelector('#scroller .card');await pg.waitForTimeout(700);
+      await pg.click('.book[data-id="figures-demo"]');await pg.waitForSelector('#scroller .card');await pg.waitForTimeout(700);
       if(fs!==19){
         await pg.click('#aa');await pg.evaluate(f=>{const r=document.getElementById('fsr');r.value=f;r.dispatchEvent(new Event('input',{bubbles:true}));r.dispatchEvent(new Event('change',{bubbles:true}))},fs);
         await pg.click('#sheetDone');await pg.waitForTimeout(1500);

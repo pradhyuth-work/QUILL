@@ -152,7 +152,8 @@
     var em=$('#sbEmail'),pw=$('#sbPass'),msg=$('#sbMsg'),inB=$('#sbIn'),upB=$('#sbUp'),outB=$('#sbOut'),form=$('#sbForm'),who=$('#sbWho');
     function paint(){
       var on=api.signedIn();form.hidden=on;outB.hidden=!on;who.hidden=!on;who.textContent=on?('Signed in'+(api.email()?' as '+api.email():'')+'.'):'';
-      var btn=$('#acctBtn');
+      var btn=$('#acctBtn'),done=$('#acctDone');
+      if(done) done.textContent=on?'Done':'Continue without an account';
       if(btn){
         btn.classList.toggle('on',on);
         btn.setAttribute('aria-label',on?('Account, signed in'+(api.email()?' as '+api.email():'')):'Sign in');

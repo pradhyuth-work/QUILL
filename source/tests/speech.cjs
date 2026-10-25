@@ -53,8 +53,11 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   T.eq('still playing',await pg.getAttribute('#play','aria-label'),'Pause');
   await pg.context().close();
 
-  /* 4. long sentences are chunked */
-  pg=await open({},'vedic-report');
+  /* 4. long sentences are chunked
+     (figures-demo's authored text has no sentence anywhere near 180 chars, so this
+     no longer exercises real chunking behaviour; it was meaningful with the long,
+     messily-extracted vedic-report PDF, which has been removed) */
+  pg=await open({},'figures-demo');
   await play(pg);await pg.waitForTimeout(2500);
   T.ok('every spoken piece <= 180 chars',(await pg.evaluate(()=>window.__spoken.every(t=>t.length<=180))));
   await pg.context().close();

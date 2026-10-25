@@ -9,7 +9,7 @@ def assemble(variant):
     ex=rd('src/extract.js').replace('/*EXTRACT_START*/\n','').replace('/*EXTRACT_END*/\n','')
     ex=re.sub(r"      if\(typeof FOLIO_DEBUG==='function'\)[^\n]*\n",'',ex)
     js=js.replace('/*@@EXTRACT@@*/',ex)
-    js=js.replace('/*@@VEDIC@@*/[]',blob('corpus/vedic_baked.json')).replace('/*@@DEMO@@*/[]',blob('corpus/demo_baked.json'))
+    js=js.replace('/*@@DEMO@@*/[]',blob('corpus/demo_baked.json'))
     html=rd('src/head.html')+'\n<style>\n'+rd('src/style.css')+'\n</style>\n'+rd('src/body.html')+'\n<script>\n'+js+'\n</script>\n'
     html=html.replace('__DATA_BASE__',"'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.2.108/'" if variant=='hosted' else 'PDF_BASE')
     return html

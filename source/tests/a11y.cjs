@@ -42,10 +42,10 @@ const audit=()=>{
     await pg.evaluate(()=>{const d=document.createElement('div');d.id='pal';d.className='shelf';d.innerHTML=[0,1,2,3,4,5,6,7].map(i=>'<div class="book"><div class="cover c'+i+'"><span class="tag">PDF</span><div><div class="ct">Title '+i+'</div><div class="ca">Author name</div></div></div><div><div class="bt">Book</div><div class="bm num">12 min read</div></div></div>').join('')+[0,1,2,3,4,5,6,7].map(i=>'<div class="cvp c'+i+'" style="position:relative;height:200px"><div class="cvp-t">Title</div><div class="cvp-a">Author</div><div class="cvp-m num">3 min read</div><div class="cvp-h">Swipe up to begin</div></div>').join('');document.getElementById('shelf').prepend(d)});
     await take('palette');await pg.evaluate(()=>document.getElementById('pal').remove());
     await pg.click('#editBtn');await take('library-edit');
-    await pg.click('[aria-label="Edit Vedic Report"]');await pg.waitForTimeout(400);await take('edit-sheet');await pg.keyboard.press('Escape');await pg.waitForTimeout(400);
+    await pg.click('[aria-label="Edit Pictures in the Flow"]');await pg.waitForTimeout(400);await take('edit-sheet');await pg.keyboard.press('Escape');await pg.waitForTimeout(400);
     await pg.click('#editBtn');
     await pg.click('#moreBtn');await pg.waitForTimeout(300);await take('more-sheet');await pg.click('#moreDone');await pg.waitForTimeout(300);
-    await pg.click('.book[data-id="vedic-report"]');await pg.waitForSelector('#scroller .card');await pg.waitForTimeout(500);
+    await pg.click('.book[data-id="figures-demo"]');await pg.waitForSelector('#scroller .card');await pg.waitForTimeout(500);
     await pg.evaluate(()=>{document.getElementById('scroller').scrollTop=document.getElementById('scroller').clientHeight*5});await pg.waitForTimeout(300);
     await take('reader');
     await pg.click('#mListen');await pg.waitForTimeout(600);await pg.click('#play');await pg.waitForTimeout(700);await take('listen-playing');

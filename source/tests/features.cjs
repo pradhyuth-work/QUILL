@@ -101,20 +101,21 @@ const C=f=>path.join(__dirname,'corpus',f);
 
   /* ---- 4. plain cover ---- */
   pg=await fresh();
-  T.eq('vedic has a picture cover',await pg.$$eval('.book[data-id="vedic-report"] img.thumb',e=>e.length),1);
-  await pg.click('#editBtn');await pg.click('[aria-label="Edit Vedic Report"]');await pg.waitForTimeout(350);
+  T.eq('demo has a picture cover',await pg.$$eval('.book[data-id="figures-demo"] img.thumb',e=>e.length),1);
+  await pg.click('#editBtn');await pg.click('[aria-label="Edit Pictures in the Flow"]');await pg.waitForTimeout(350);
   T.ok('cover option visible',!(await pg.$eval('#rnCvRow',e=>e.hidden)));
   await pg.click('#rnPic [data-p="1"]');await pg.click('#rnSave');await pg.waitForTimeout(400);
-  T.eq('plain cover removes the picture',await pg.$$eval('.book[data-id="vedic-report"] img.thumb',e=>e.length),0);
+  T.eq('plain cover removes the picture',await pg.$$eval('.book[data-id="figures-demo"] img.thumb',e=>e.length),0);
   await pg.waitForTimeout(400);await pg.reload();await pg.waitForSelector('.book');
-  T.eq('plain cover persists',await pg.$$eval('.book[data-id="vedic-report"] img.thumb',e=>e.length),0);
-  await pg.click('.book[data-id="vedic-report"]');await pg.waitForSelector('#scroller .card');await pg.waitForTimeout(300);
+  T.eq('plain cover persists',await pg.$$eval('.book[data-id="figures-demo"] img.thumb',e=>e.length),0);
+  await pg.click('.book[data-id="figures-demo"]');await pg.waitForSelector('#scroller .card');await pg.waitForTimeout(300);
   await pg.evaluate(()=>{document.getElementById('scroller').scrollTop=0});await pg.waitForTimeout(200);
   T.eq('reader cover card is plain',await pg.$$eval('#scroller .card[data-n="0"] .cvp-art',e=>e.length),0);
   await pg.context().close();
 
   /* ---- 5. sync against a mock db ---- */
-  const remote={v:1,pos:{'vedic-report':{i:400,t:Date.now()+1000}},shelfT:Date.now()+5000,order:['sample','vedic-report','figures-demo'],meta:{sample:{title:'Renamed Elsewhere',color:3,group:'',plain:false}},groups:[],settings:{}};
+  /* figures-demo is short, so this checks a small remote position lands rather than a deep one */
+  const remote={v:1,pos:{'figures-demo':{i:5,t:Date.now()+1000}},shelfT:Date.now()+5000,order:['sample','figures-demo'],meta:{sample:{title:'Renamed Elsewhere',color:3,group:'',plain:false}},groups:[],settings:{}};
   pg=await mkPage(br,base);
   await pg.addInitScript(r=>{
     window.__db={doc:r,sets:0};
@@ -127,11 +128,11 @@ const C=f=>path.join(__dirname,'corpus',f);
   await pg.goto(base+'/');await pg.waitForSelector('.book');await pg.waitForTimeout(800);
   T.eq('remote order and rename applied',(await titles(pg))[0],'Renamed Elsewhere');
   T.ok('sync status shown',true);
-  await pg.click('.book[data-id="vedic-report"]');await pg.waitForSelector('#scroller .card');await pg.waitForTimeout(500);
-  T.ok('remote position applied',(await pg.$eval('#count',e=>parseInt(e.textContent)))>10,await pg.$eval('#count',e=>e.textContent));
-  await pg.evaluate(()=>{const s=document.getElementById('scroller');s.scrollTop+=s.clientHeight*3});
+  await pg.click('.book[data-id="figures-demo"]');await pg.waitForSelector('#scroller .card');await pg.waitForTimeout(500);
+  T.ok('remote position applied',(await pg.$eval('#count',e=>parseInt(e.textContent)))>0,await pg.$eval('#count',e=>e.textContent));
+  await pg.evaluate(()=>{const s=document.getElementById('scroller');s.scrollTop+=s.clientHeight});
   await pg.waitForFunction(()=>window.__db.sets>=1,null,{timeout:15000});
-  T.ok('position is pushed back',await pg.evaluate(()=>window.__db.doc.pos['vedic-report'].i>0&&/data\/users\/u1\//.test(window.__db.path)),await pg.evaluate(()=>window.__db.path));
+  T.ok('position is pushed back',await pg.evaluate(()=>window.__db.doc.pos['figures-demo'].i>0&&/data\/users\/u1\//.test(window.__db.path)),await pg.evaluate(()=>window.__db.path));
   T.ok('book text is never synced',await pg.evaluate(()=>JSON.stringify(window.__db.doc).length<4000));
   await pg.context().close();
 

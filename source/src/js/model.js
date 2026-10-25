@@ -76,5 +76,3 @@ var sample=buildBook({id:'sample',title:'Reading on Glass',author:'Sample text',
     {type:'p',text:'Highlighting the sentence being spoken helps the eye follow along. It also makes errors easy to spot, such as a name the voice pronounces oddly. Those moments are worth noting so they can be fixed later.'}
   ]}
 ]);
-var VEDIC=/*@@VEDIC@@*/[];
-var vedic=buildBook({id:'vedic-report',title:'Vedic Report',author:'AstroSage',tag:'PDF',alt:true,note:'56 pages',trusted:true},VEDIC);

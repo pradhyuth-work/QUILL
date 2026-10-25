@@ -3,8 +3,8 @@ var PALN=8,PALNAMES=["Sage", "Sand", "Blush", "Sky", "Lavender", "Butter", "Peac
 var gone,ups,metaO,orderO,groups,flt,books;
 var DEMO=/*@@DEMO@@*/[];
 var demo=buildBook({id:'figures-demo',title:'Pictures in the Flow',author:'Demo book',tag:'Demo',alt:true,note:'3 figures',trusted:true},DEMO);
-vedic.color=0;sample.color=-1;demo.color=3;
-var builtins=[vedic,sample,demo];builtins.forEach(function(b){b.n=b.items.length});
+sample.color=-1;demo.color=3;
+var builtins=[sample,demo];builtins.forEach(function(b){b.n=b.items.length});
 function groupById(id){return groups.filter(function(g){return g.id===id})[0]}
 function reloadLibrary(){
   gone=store.get('gone',[]);ups=store.get('ups',{});metaO=store.get('meta',{});orderO=store.get('order',[]);
