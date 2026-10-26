@@ -2122,6 +2122,80 @@ function folioColumns(items,W){
   tag.sort(function(a,b){return a.band-b.band||a.side-b.side||a.ix-b.ix});
   return tag.map(function(t){return t.it});
 }
+/* a big first letter set beside the opening lines of a chapter: glue it back onto its word ("N" + "orma" -> "Norma") */
+function folioDropCaps(items,dz){
+  var out=items.slice(),i,j;
+  for(i=0;i<out.length;i++){
+    var c=out[i];
+    if(!c||!c.s||c.s.trim().length!==1||!/\p{Lu}/u.test(c.s.trim())||(c.z||0)<dz*1.7) continue;
+    var top=c.y+c.z*0.72,best=-1,cw=c.w||c.z*0.7;
+    for(j=0;j<out.length;j++){
+      var t=out[j];
+      if(j===i||!t||!t.s||!/\S/.test(t.s)||(t.z||0)>dz*1.3) continue;
+      if(t.y>top+1||t.y<c.y-1) continue;                       /* its baseline sits inside the height of the big letter */
+      var gx=t.x-(c.x+cw);
+      if(gx<-3||gx>c.z*0.8) continue;                          /* and it starts right beside the letter */
+      if(!/^\s*\p{Ll}/u.test(t.s)) continue;
+      if(best<0||t.y>out[best].y) best=j;                      /* the top line is the one the letter belongs to */
+    }
+    if(best>=0){
+      var t2=out[best];
+      out[best]=Object.assign({},t2,{s:c.s.trim()+t2.s.replace(/^\s+/,''),x:c.x,w:(t2.x+(t2.w||0))-c.x});
+      out[i]=null;
+    }
+  }
+  return out.filter(Boolean);
+}
+/* a narrow column of smaller type in the outer margin (pull quotes, epigraphs, side notes): not part of the book's own text.
+   Found as an empty vertical channel with a small-type column beside it; dropped before lines are built, so it can never mix into body lines. */
+function folioSidebar(items,W,dz){
+  var its=items.filter(function(it){return it&&it.s&&/\S/.test(it.s)});
+  if(its.length<20||!W) return items;
+  var BIN=3,nb=Math.ceil(W/BIN)+1,cov=new Int32Array(nb),k,allow=Math.max(1,Math.floor(its.length*0.03));
+  its.forEach(function(it){
+    var a=Math.max(0,Math.floor(it.x/BIN)),b=Math.min(nb-1,Math.floor((it.x+(it.w||0))/BIN));
+    for(k=a;k<=b;k++) cov[k]++;
+  });
+  function chars(t){return t.s.replace(/\s/g,'').length}
+  function test(a,b,right){
+    var xg=(a+b+1)/2*BIN,side=[],mainC=0,sideC=0,cross=0,sx0=1e9,sx1=-1e9;
+    its.forEach(function(it){
+      var x1=it.x+(it.w||0);
+      if(it.x<xg-1&&x1>xg+1){cross++;return}
+      var isRight=it.x+(it.w||0)/2>=xg;
+      if(isRight===right){side.push(it);sideC+=chars(it);if(it.x<sx0)sx0=it.x;if(x1>sx1)sx1=x1}
+      else mainC+=chars(it);
+    });
+    if(cross>allow||sideC<60||mainC<sideC*1.6||sx1-sx0>W*0.38) return null;
+    if(folioDominantSize(side)>dz*0.93) return null;            /* a sidebar is set smaller than the body */
+    var rows=[],ys=side.slice().sort(function(p,q){return q.y-p.y||p.x-q.x}),lastY=null;
+    ys.forEach(function(it){if(lastY===null||Math.abs(lastY-it.y)>2){rows.push([]);lastY=it.y}rows[rows.length-1].push(it.s)});
+    if(rows.length<4) return null;
+    if(!folioIsProse(rows.map(function(r){return r.join(' ')}).join(' ').replace(/\s+/g,' ').trim())) return null;   /* words, not table cells or numbers */
+    return {xg:xg,right:right,sideC:sideC};
+  }
+  var found=null;
+  [[0.55,0.93,true],[0.07,0.45,false]].forEach(function(r){
+    if(found) return;
+    var lo=Math.floor(nb*r[0]),hi=Math.ceil(nb*r[1]),run=null,cands=[];
+    for(k=lo;k<=hi;k++){
+      if(cov[k]<=allow){if(!run){run={a:k,b:k};cands.push(run)}else run.b=k}
+      else run=null;
+    }
+    cands.forEach(function(c){
+      if((c.b-c.a+1)*BIN<6) return;
+      var res=test(c.a,c.b,r[2]);
+      if(res&&(!found||res.sideC>found.sideC)) found=res;
+    });
+  });
+  if(!found) return items;
+  return items.filter(function(it){
+    if(!it) return false;
+    var mid=it.x+(it.w||0)/2,x1=it.x+(it.w||0);
+    if(it.x<found.xg-1&&x1>found.xg+1) return true;
+    return (mid>=found.xg)!==found.right;
+  });
+}
 /* tiny raised numbers (footnote marks) should not be spoken as part of the sentence */
 function folioDominantSize(items){
   var h={},best=0,bz=10;
@@ -2148,9 +2222,15 @@ function folioStripMarks(items,dz){
 }
 function folioPagesToBlocks(pages){
   var N=pages.length,p,i,k;
+  /* the book's usual type size, over every page: the reference for telling margin sidebars and drop caps from body text */
+  var docItems=[];
+  pages.forEach(function(pg){for(var q=0;q<pg.items.length;q++) docItems.push(pg.items[q])});
+  var dzDoc=folioDominantSize(docItems);
   /* 1. group items into lines (stream order keeps column reading order) */
   var all=pages.map(function(pg){
-    var lines=[],L=null,dz=folioDominantSize(pg.items);
+    var lines=[],L=null;
+    pg.items=folioSidebar(folioDropCaps(pg.items,dzDoc),pg.W,dzDoc);
+    var dz=folioDominantSize(pg.items);
     pg.dz=dz;
     var src=folioStripMarks(folioColumns(pg.items,pg.W),dz);
     src.forEach(function(it){
