@@ -2146,54 +2146,80 @@ function folioDropCaps(items,dz){
   }
   return out.filter(Boolean);
 }
-/* a narrow column of smaller type in the outer margin (pull quotes, epigraphs, side notes): not part of the book's own text.
-   Found as an empty vertical channel with a small-type column beside it; dropped before lines are built, so it can never mix into body lines. */
-function folioSidebar(items,W,dz){
+/* Margin sidebars: a narrow column of smaller type in the outer margin (epigraphs, pull quotes, side notes).
+   It is not part of the book's own text, so it is removed from every page before lines are built and can never mix into body lines.
+   Found two ways. On a page by itself: an empty vertical channel with a column of small prose type beside it, however tight the gutter.
+   Across the book: once several pages show the same gutter, that gutter is applied to every page, so a page with one short note is cleaned too. */
+function folioSidebarFind(items,W,dz,hint){
   var its=items.filter(function(it){return it&&it.s&&/\S/.test(it.s)});
-  if(its.length<20||!W) return items;
-  var BIN=3,nb=Math.ceil(W/BIN)+1,cov=new Int32Array(nb),k,allow=Math.max(1,Math.floor(its.length*0.03));
+  if(!W||its.length<(hint?8:20)) return null;
+  var BIN=1,nb=Math.ceil(W/BIN)+2,cov=new Int32Array(nb),k,allow=Math.max(1,Math.floor(its.length*0.03));
   its.forEach(function(it){
     var a=Math.max(0,Math.floor(it.x/BIN)),b=Math.min(nb-1,Math.floor((it.x+(it.w||0))/BIN));
     for(k=a;k<=b;k++) cov[k]++;
   });
   function chars(t){return t.s.replace(/\s/g,'').length}
-  function test(a,b,right){
-    var xg=(a+b+1)/2*BIN,side=[],mainC=0,sideC=0,cross=0,sx0=1e9,sx1=-1e9;
+  function test(xg,right){
+    var side=[],cross=0,mainC=0,sideC=0,sx0=1e9,sx1=-1e9,mx0=1e9,mx1=-1e9;
     its.forEach(function(it){
       var x1=it.x+(it.w||0);
       if(it.x<xg-1&&x1>xg+1){cross++;return}
-      var isRight=it.x+(it.w||0)/2>=xg;
-      if(isRight===right){side.push(it);sideC+=chars(it);if(it.x<sx0)sx0=it.x;if(x1>sx1)sx1=x1}
-      else mainC+=chars(it);
+      if((it.x+(it.w||0)/2>=xg)===right){side.push(it);sideC+=chars(it);if(it.x<sx0)sx0=it.x;if(x1>sx1)sx1=x1}
+      else{mainC+=chars(it);if(it.x<mx0)mx0=it.x;if(x1>mx1)mx1=x1}
     });
-    if(cross>allow||sideC<60||mainC<sideC*1.6||sx1-sx0>W*0.38) return null;
+    if(cross>allow||sideC<(hint?12:60)||sx1-sx0>W*0.38) return null;
+    /* the column is narrow next to the text it stands beside, and the text is not just a sliver of the page */
+    if(!hint&&(mx1-mx0<(sx1-sx0)*1.5||mainC<sideC*0.35)) return null;
     if(folioDominantSize(side)>dz*0.93) return null;            /* a sidebar is set smaller than the body */
     var rows=[],ys=side.slice().sort(function(p,q){return q.y-p.y||p.x-q.x}),lastY=null;
     ys.forEach(function(it){if(lastY===null||Math.abs(lastY-it.y)>2){rows.push([]);lastY=it.y}rows[rows.length-1].push(it.s)});
-    if(rows.length<4) return null;
-    if(!folioIsProse(rows.map(function(r){return r.join(' ')}).join(' ').replace(/\s+/g,' ').trim())) return null;   /* words, not table cells or numbers */
-    return {xg:xg,right:right,sideC:sideC};
+    if(rows.length<(hint?1:4)) return null;
+    var txt=rows.map(function(r){return r.join(' ')}).join(' ').replace(/\s+/g,' ').trim();
+    if(!folioIsProse(txt)) return null;                          /* words, not table cells or numbers */
+    /* epigraphs and side notes are written in sentences; a short-line list (ingredients, glossary terms) is content, not a sidebar */
+    if((txt.match(/[.!?…;]/g)||[]).length<(hint?1:2)) return null;
+    return {xg:xg,right:right,sideC:sideC,u:xg/W};
   }
-  var found=null;
-  [[0.55,0.93,true],[0.07,0.45,false]].forEach(function(r){
-    if(found) return;
-    var lo=Math.floor(nb*r[0]),hi=Math.ceil(nb*r[1]),run=null,cands=[];
-    for(k=lo;k<=hi;k++){
-      if(cov[k]<=allow){if(!run){run={a:k,b:k};cands.push(run)}else run.b=k}
+  /* empty runs of bins inside [lo,hi]: the white channel between a margin column and the text */
+  function channels(lo,hi){
+    var run=null,out=[];
+    for(k=Math.max(0,lo);k<=Math.min(nb-1,hi);k++){
+      if(cov[k]<=allow){if(!run){run={a:k,b:k};out.push(run)}else run.b=k}
       else run=null;
     }
-    cands.forEach(function(c){
-      if((c.b-c.a+1)*BIN<6) return;
-      var res=test(c.a,c.b,r[2]);
+    return out.filter(function(c){return (c.b-c.a+1)*BIN>=2});
+  }
+  var found=null;
+  if(hint){
+    var near=Math.max(4,W*0.02),cs=channels(Math.floor((hint.u*W-near)/BIN),Math.ceil((hint.u*W+near)/BIN)),xg=hint.u*W,wide=0;
+    cs.forEach(function(c){if(c.b-c.a>=wide){wide=c.b-c.a;xg=(c.a+c.b+1)/2*BIN}});
+    return test(xg,hint.right);
+  }
+  [[0.55,0.93,true],[0.07,0.45,false]].forEach(function(r){
+    channels(Math.floor(nb*r[0]),Math.ceil(nb*r[1])).forEach(function(c){
+      var res=test((c.a+c.b+1)/2*BIN,r[2]);
       if(res&&(!found||res.sideC>found.sideC)) found=res;
     });
   });
-  if(!found) return items;
+  return found;
+}
+/* the same gutter, as a share of page width, on several pages (one hint per side) is the book's own layout */
+function folioSidebarHints(list,textPages){
+  var out=[];
+  [true,false].forEach(function(r){
+    var us=list.filter(function(o){return o.right===r}).map(function(o){return o.u}).sort(function(a,b){return a-b});
+    if(us.length<3||us.length<textPages*0.05) return;
+    var med=us[us.length>>1],near=us.filter(function(u){return Math.abs(u-med)<=0.015}).length;
+    if(near>=3&&near>=us.length*0.6) out.push({right:r,u:med});
+  });
+  return out;
+}
+function folioSidebarCut(items,f){
   return items.filter(function(it){
     if(!it) return false;
     var mid=it.x+(it.w||0)/2,x1=it.x+(it.w||0);
-    if(it.x<found.xg-1&&x1>found.xg+1) return true;
-    return (mid>=found.xg)!==found.right;
+    if(it.x<f.xg-1&&x1>f.xg+1) return true;
+    return (mid>=f.xg)!==f.right;
   });
 }
 /* tiny raised numbers (footnote marks) should not be spoken as part of the sentence */
@@ -2226,10 +2252,23 @@ function folioPagesToBlocks(pages){
   var docItems=[];
   pages.forEach(function(pg){for(var q=0;q<pg.items.length;q++) docItems.push(pg.items[q])});
   var dzDoc=folioDominantSize(docItems);
+  /* margin sidebars: look for them page by page, then apply what the book shows consistently to every page */
+  var sbList=[],textPages=0,sbHints;
+  pages.forEach(function(pg){
+    pg.items=folioDropCaps(pg.items,dzDoc);
+    if(pg.items.length>=8) textPages++;
+    pg.sb=folioSidebarFind(pg.items,pg.W,dzDoc,null);
+    if(pg.sb) sbList.push(pg.sb);
+  });
+  sbHints=folioSidebarHints(sbList,textPages);
+  pages.forEach(function(pg){
+    var f=pg.sb;
+    if(!f) sbHints.forEach(function(h){var g=folioSidebarFind(pg.items,pg.W,dzDoc,h);if(g&&(!f||g.sideC>f.sideC)) f=g});
+    if(f) pg.items=folioSidebarCut(pg.items,f);
+  });
   /* 1. group items into lines (stream order keeps column reading order) */
   var all=pages.map(function(pg){
     var lines=[],L=null;
-    pg.items=folioSidebar(folioDropCaps(pg.items,dzDoc),pg.W,dzDoc);
     var dz=folioDominantSize(pg.items);
     pg.dz=dz;
     var src=folioStripMarks(folioColumns(pg.items,pg.W),dz);

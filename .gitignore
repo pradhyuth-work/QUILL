@@ -4,3 +4,5 @@ _incoming/
 .DS_Store
 Thumbs.db
 password.txt
+source/dist/
+source/tests/corpus/
